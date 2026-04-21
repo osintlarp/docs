@@ -1,4 +1,193 @@
 ---
-title: 'Get Plants'
-openapi: 'GET /plants'
+title: "Email Breach Lookup"
+api: "POST /api/leak-search"
+description: "Multi-source email breach and intelligence search across LeakOSint, Deadeye, CSInt, Melissa, IntelVault, and Cypher."
 ---
+
+## Overview
+
+Queries multiple breach and intelligence databases in parallel for a given email address and returns aggregated results in a unified envelope. Sources include LeakOSint, Deadeye, CSInt, Melissa, IntelVault, and Cypher.
+
+<Note>
+  Requires a valid API key and at least 1 remaining daily request on your plan. Free plan users have access to this endpoint within their daily limit of 10 requests.
+</Note>
+
+---
+
+## Request
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token. Format: `Bearer <api_key>`
+</ParamField>
+
+<ParamField header="X-API-Key" type="string">
+  Alternative to Authorization header. Pass your API key directly.
+</ParamField>
+
+### Body
+
+<ParamField body="email" type="string" required>
+  The email address to search across breach databases.
+
+  Example: `someone@example.com`
+</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://your-server:5001/api/leak-search \
+  -H "Authorization: Bearer nra_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "someone@example.com"}'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "http://your-server:5001/api/leak-search",
+    headers={"Authorization": "Bearer nra_xxxxxxxxxxxx"},
+    json={"email": "someone@example.com"}
+)
+
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch("http://your-server:5001/api/leak-search", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer nra_xxxxxxxxxxxx",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ email: "someone@example.com" })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+</CodeGroup>
+
+---
+
+## Response
+
+### Fields
+
+<ResponseField name="List" type="object">
+  Map of source/database names to their results. Each key is a provider name (e.g. `"Deadeye Breach"`, `"LeakOSint"`). Empty object `{}` if no results found.
+
+  <Expandable title="List[source]">
+    <ResponseField name="Data" type="array">
+      Array of records returned by this source. Common fields include `Email`, `Password`, `Username`, `Name`, `Phone`, `IP`, `Source`, and `Date` — exact schema varies by database.
+    </ResponseField>
+
+    <ResponseField name="InfoLeak" type="string">
+      Human-readable description of the data source.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="NumOfDatabase" type="integer">
+  Number of sources that returned at least one result.
+</ResponseField>
+
+<ResponseField name="NumOfResults" type="integer">
+  Total number of records returned across all sources.
+</ResponseField>
+
+<ResponseField name="price" type="string">
+  Query cost. Typically `"0"` for metered plans.
+</ResponseField>
+
+<ResponseField name="search time" type="string">
+  Server-side query duration, e.g. `"1s"`.
+</ResponseField>
+
+---
+
+### Examples
+
+<ResponseExample>
+
+```json 200 — Results Found
+{
+  "List": {
+    "Deadeye Breach": {
+      "Data": [
+        {
+          "Email": "someone@example.com",
+          "Password": "hunter2",
+          "Username": "someone",
+          "Source": "ExampleBreach2023"
+        }
+      ],
+      "InfoLeak": "Deadeye universal breach results"
+    },
+    "LeakOSint": {
+      "Data": [
+        {
+          "Email": "someone@example.com",
+          "Phone": "+14155550000",
+          "Name": "John Doe"
+        }
+      ],
+      "InfoLeak": "LeakOSint aggregated results"
+    }
+  },
+  "NumOfDatabase": 2,
+  "NumOfResults": 2,
+  "price": "0",
+  "search time": "1s"
+}
+```
+
+```json 200 — No Results
+{
+  "List": {},
+  "NumOfDatabase": 0,
+  "NumOfResults": 0,
+  "price": "0",
+  "search time": "0s"
+}
+```
+
+```json 400 — Bad Request
+{
+  "error": "'email' field is required"
+}
+```
+
+```json 401 — Unauthorized
+{
+  "error": "Unauthorized — invalid or missing API key"
+}
+```
+
+```json 429 — Rate Limited
+{
+  "error": "Daily limit reached for your plan"
+}
+```
+
+```json 500 — Server Error
+{
+  "error": "Upstream query failed"
+}
+```
+
+</ResponseExample>
+
+---
+
+## Error Codes
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Missing or malformed `email` field in request body |
+| `401` | Invalid or missing API key |
+| `429` | Daily, hourly, or monthly plan quota exceeded |
+| `500` | Internal error or upstream source failure |
