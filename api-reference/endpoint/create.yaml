@@ -1,0 +1,187 @@
+openapi: 3.1.0
+info:
+  title: neur-a API
+  version: 1.0.0
+  description: neur-a intelligence search API
+
+servers:
+  - url: http://your-server:5001
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  /api/leak-search:
+    post:
+      operationId: leakSearch
+      summary: Email Breach Lookup
+      description: >
+        Multi-source email breach and intelligence search. Queries LeakOSint, Deadeye,
+        CSInt, Melissa, IntelVault, and Cypher in parallel and aggregates results into
+        a unified response envelope. Requires a plan with at least 1 daily usage remaining.
+      tags:
+        - Search & Intelligence
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The email address to search across breach databases.
+                  example: someone@example.com
+            examples:
+              basic:
+                summary: Basic email lookup
+                value:
+                  email: someone@example.com
+      responses:
+        "200":
+          description: Successful breach search response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              examples:
+                hit:
+                  summary: Result with breach data
+                  value:
+                    List:
+                      "Deadeye Breach":
+                        Data:
+                          - Email: "someone@example.com"
+                            Password: "hunter2"
+                            Username: "someone"
+                            Source: "ExampleBreach2023"
+                        InfoLeak: "Deadeye universal breach results"
+                      "LeakOSint":
+                        Data:
+                          - Email: "someone@example.com"
+                            Phone: "+14155550000"
+                            Name: "John Doe"
+                        InfoLeak: "LeakOSint aggregated results"
+                    NumOfDatabase: 2
+                    NumOfResults: 2
+                    price: "0"
+                    search time: "1s"
+                no_results:
+                  summary: No breach records found
+                  value:
+                    List: {}
+                    NumOfDatabase: 0
+                    NumOfResults: 0
+                    price: "0"
+                    search time: "0s"
+        "400":
+          description: Missing or invalid request body.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "'email' field is required"
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Unauthorized — invalid or missing API key"
+        "429":
+          description: Rate limit or plan quota exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Daily limit reached for your plan"
+        "500":
+          description: Internal server error or upstream source failure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Upstream query failed"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: >
+        Pass your API key as a Bearer token.
+        Example: `Authorization: Bearer nra_xxxxxxxxxxxx`
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: >
+        Alternatively, pass your API key via the X-API-Key header.
+
+  schemas:
+    SearchResponse:
+      type: object
+      description: Standard search response envelope returned by all intelligence search endpoints.
+      properties:
+        List:
+          type: object
+          description: >
+            Map of source/database names to their results. Each key is a provider name
+            (e.g. "Deadeye Breach", "LeakOSint"). Empty object if no results found.
+          additionalProperties:
+            $ref: "#/components/schemas/SourceResult"
+        NumOfDatabase:
+          type: integer
+          description: Number of sources that returned at least one result.
+          example: 2
+        NumOfResults:
+          type: integer
+          description: Total number of records returned across all sources.
+          example: 5
+        price:
+          type: string
+          description: Query cost. Typically "0" for metered plans.
+          example: "0"
+        search time:
+          type: string
+          description: Server-side query duration.
+          example: "1s"
+
+    SourceResult:
+      type: object
+      description: Results from a single intelligence source.
+      properties:
+        Data:
+          type: array
+          description: Array of records returned by this source. Fields vary by source.
+          items:
+            type: object
+            description: >
+              A single breach or intelligence record. Common fields include Email,
+              Password, Username, Name, Phone, IP, Source, and Date — but the exact
+              schema depends on the originating database.
+            additionalProperties: true
+        InfoLeak:
+          type: string
+          description: Human-readable description of the data source.
+          example: "Deadeye universal breach results"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+          example: "'email' field is required"
