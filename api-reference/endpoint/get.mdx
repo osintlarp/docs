@@ -1,6 +1,6 @@
 ---
 title: "Email Breach Lookup"
-api: "POST /api/leak-search"
+api: "POST https://api.neur-a.org/api/leak-search"
 description: "Multi-source email breach and intelligence search across LeakOSint, Deadeye, CSInt, Melissa, IntelVault, and Cypher."
 ---
 
@@ -37,7 +37,7 @@ Queries multiple breach and intelligence databases in parallel for a given email
 <CodeGroup>
 
 ```bash cURL
-curl -X POST http://your-server:5001/api/leak-search \
+curl -X POST https://api.neur-a.org/api/leak-search \
   -H "Authorization: Bearer nra_xxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{"email": "someone@example.com"}'
@@ -47,7 +47,7 @@ curl -X POST http://your-server:5001/api/leak-search \
 import requests
 
 response = requests.post(
-    "http://your-server:5001/api/leak-search",
+    "https://api.neur-a.org/api/leak-search",
     headers={"Authorization": "Bearer nra_xxxxxxxxxxxx"},
     json={"email": "someone@example.com"}
 )
@@ -56,7 +56,7 @@ print(response.json())
 ```
 
 ```javascript JavaScript
-const response = await fetch("http://your-server:5001/api/leak-search", {
+const response = await fetch("https://api.neur-a.org/api/leak-search", {
   method: "POST",
   headers: {
     "Authorization": "Bearer nra_xxxxxxxxxxxx",
