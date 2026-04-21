@@ -17,7 +17,7 @@ Authentication is handled via Bearer tokens tied to your account plan. Usage is 
 
 ## Base URL
 
-```
+```text
 http://your-server:5001
 ```
 
@@ -27,7 +27,7 @@ http://your-server:5001
 
 All protected endpoints require a Bearer token from your account.
 
-```json
+```json highlight={4-5}
 "security": [
   {
     "bearerAuth": []
@@ -58,7 +58,7 @@ Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-sea
 <Columns cols={2}>
   <Column>
     | Plan | Monthly | Daily | Hourly | StealerLogs/Day |
-    |------|---------|-------|--------|-----------------|
+    | --- | --- | --- | --- | --- |
     | `free` | 50 | 10 | 5 | 0 |
     | `pro` | 3,000 | 100 | 30 | 10 |
     | `plus` | 6,000 | 200 | 80 | 10 |
@@ -139,6 +139,7 @@ Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-sea
 <Columns cols={2}>
   <Column>
     **Search & Intelligence**
+
     - `POST /api/leak-search` — Email breach lookup
     - `POST /api/ip-search` — IP intelligence
     - `POST /api/phone-search` — Phone lookup
@@ -147,6 +148,7 @@ Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-sea
     - `GET /api/deep-search/<job_id>` — Poll deep search job
 
     **Social Platforms**
+
     - `POST /api/steam-search`
     - `POST /api/tiktok-search`
     - `POST /api/snapchat-search`
@@ -156,6 +158,7 @@ Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-sea
   </Column>
   <Column>
     **StealerLogs**
+
     - `POST /api/stealerlogs-search`
     - `GET /api/stealerlogs-file/<file_id>`
     - `POST /api/stealerlogs-victims-search`
@@ -164,6 +167,7 @@ Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-sea
     - `GET /api/stealerlogs-victims/<log_id>/archive`
 
     **Utility**
+
     - `GET /api/health` — Service status (no auth)
     - `GET /api/docs` — Auto-generated docs (no auth)
     - `GET /api/me` — Account stats and limits
