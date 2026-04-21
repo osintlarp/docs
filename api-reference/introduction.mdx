@@ -1,28 +1,31 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Introduction"
+description: "Welcome to the neur-a API — intelligence search infrastructure for OSINT, breach data, stealer logs, and social platform lookups."
 ---
 
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  All endpoints (except `/api/health` and `/api/docs`) require a valid API key. Pass it via the `Authorization: Bearer <api_key>` header or `X-API-Key: <api_key>`. Your key is the `api_key` field in your account profile.
 </Note>
 
 ## Welcome
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+The **neur-a API** is a standalone REST service (port `5001`) providing multi-source intelligence search across breach databases, stealer logs, IP/phone/person lookups, and social platform profiles.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+Authentication is handled via Bearer tokens tied to your account plan. Usage is metered per request and enforced across monthly, daily, and hourly windows depending on your plan tier.
+
+---
+
+## Base URL
+
+```
+http://your-server:5001
+```
+
+---
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All protected endpoints require a Bearer token from your account.
 
 ```json
 "security": [
@@ -31,3 +34,185 @@ All API endpoints are authenticated using Bearer tokens and picked up from the s
   }
 ]
 ```
+
+Pass your API key using either header:
+
+<CodeGroup>
+
+```http Authorization Header
+Authorization: Bearer nra_4fbec9081f741ba3765c6174704ef26e6c74828782fa2a3e67b12b88cb2a12d0
+```
+
+```http X-API-Key Header
+X-API-Key: nra_4fbec9081f741ba3765c6174704ef26e6c74828782fa2a3e67b12b88cb2a12d0
+```
+
+</CodeGroup>
+
+---
+
+## Rate Limits & Plans
+
+Standard endpoints are limited to **10 req/min per IP**. The `POST /api/deep-search` endpoint is limited to **5 req/min per IP**.
+
+<Columns cols={2}>
+  <Column>
+    | Plan | Monthly | Daily | Hourly | StealerLogs/Day |
+    |------|---------|-------|--------|-----------------|
+    | `free` | 50 | 10 | 5 | 0 |
+    | `pro` | 3,000 | 100 | 30 | 10 |
+    | `plus` | 6,000 | 200 | 80 | 10 |
+    | `enterprise` | 99,999 | 9,999 | 999 | 100 |
+  </Column>
+  <Column>
+    Check your current usage and limits at any time using `GET /api/me`. The response includes your current plan tier, expiry, and per-window usage counts.
+  </Column>
+</Columns>
+
+---
+
+## Account Info
+
+<ResponseField name="username" type="string">
+  Your account username.
+</ResponseField>
+
+<ResponseField name="plan" type="string">
+  Your current plan: `free`, `pro`, `plus`, or `enterprise`.
+</ResponseField>
+
+<ResponseField name="plan_expires" type="string">
+  ISO 8601 timestamp of when your plan expires.
+</ResponseField>
+
+<ResponseField name="usage_total" type="integer">
+  Total API calls made this month.
+</ResponseField>
+
+<ResponseField name="usage_daily" type="integer">
+  API calls made today.
+</ResponseField>
+
+<ResponseField name="usage_hourly" type="integer">
+  API calls made this hour.
+</ResponseField>
+
+<ResponseField name="daily_limit" type="integer">
+  Maximum daily calls allowed by your plan.
+</ResponseField>
+
+<ResponseField name="hourly_limit" type="integer">
+  Maximum hourly calls allowed by your plan.
+</ResponseField>
+
+<ResponseField name="monthly_limit" type="integer">
+  Maximum monthly calls allowed by your plan.
+</ResponseField>
+
+<ResponseField name="stealerlogs_daily_limit" type="integer">
+  Daily limit for StealerLogs-specific endpoints.
+</ResponseField>
+
+<ResponseExample>
+
+```json GET /api/me
+{
+  "username": "test",
+  "plan": "pro",
+  "plan_expires": "2026-05-21T07:45:34.322717",
+  "usage_total": 2,
+  "usage_daily": 2,
+  "usage_hourly": 2,
+  "daily_limit": 100,
+  "hourly_limit": 30,
+  "monthly_limit": 3000,
+  "stealerlogs_daily_limit": 10
+}
+```
+
+</ResponseExample>
+
+---
+
+## Endpoint Overview
+
+<Columns cols={2}>
+  <Column>
+    **Search & Intelligence**
+    - `POST /api/leak-search` — Email breach lookup
+    - `POST /api/ip-search` — IP intelligence
+    - `POST /api/phone-search` — Phone lookup
+    - `POST /api/person-search` — Name/person search
+    - `POST /api/deep-search` — Recursive deep search
+    - `GET /api/deep-search/<job_id>` — Poll deep search job
+
+    **Social Platforms**
+    - `POST /api/steam-search`
+    - `POST /api/tiktok-search`
+    - `POST /api/snapchat-search`
+    - `POST /api/discord-search`
+    - `POST /api/discord-to-roblox`
+    - `POST /api/roblox-search`
+  </Column>
+  <Column>
+    **StealerLogs**
+    - `POST /api/stealerlogs-search`
+    - `GET /api/stealerlogs-file/<file_id>`
+    - `POST /api/stealerlogs-victims-search`
+    - `GET /api/stealerlogs-victims/<log_id>`
+    - `GET /api/stealerlogs-victims/<log_id>/files/<file_id>`
+    - `GET /api/stealerlogs-victims/<log_id>/archive`
+
+    **Utility**
+    - `GET /api/health` — Service status (no auth)
+    - `GET /api/docs` — Auto-generated docs (no auth)
+    - `GET /api/me` — Account stats and limits
+  </Column>
+</Columns>
+
+---
+
+## Standard Response Format
+
+Most search endpoints return a consistent envelope:
+
+<ResponseField name="List" type="object">
+  A map of source names to their data and metadata. Each key is a database/provider name.
+</ResponseField>
+
+<ResponseField name="NumOfDatabase" type="integer">
+  Number of sources that returned results.
+</ResponseField>
+
+<ResponseField name="NumOfResults" type="integer">
+  Total number of records returned across all sources.
+</ResponseField>
+
+<ResponseField name="price" type="string">
+  Cost of the query (typically `"0"` for metered plans).
+</ResponseField>
+
+<ResponseField name="search time" type="string">
+  Server-side query duration (e.g. `"0s"`).
+</ResponseField>
+
+<ResponseExample>
+
+```json Standard Search Response
+{
+  "List": {
+    "Deadeye Breach": {
+      "Data": [
+        { "Email": "someone@example.com", "Password": "hunter2" }
+      ],
+      "InfoLeak": "Deadeye universal breach results"
+    }
+  },
+  "NumOfDatabase": 1,
+  "NumOfResults": 1,
+  "price": "0",
+  "search time": "0s"
+}
+```
+
+</ResponseExample>
